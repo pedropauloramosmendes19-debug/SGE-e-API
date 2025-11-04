@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title%}
+SGE - Home
+{% endblock %}
+
+{% block content %}
+
+{% include 'components/_products_metrics.html' %}
+
+{% include 'components/_sales_metrics.html' %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="row mt-4 justify-content-center">
+
+    <div class="col-md-6 text-center">
+        <h5 class="text-center mb3">Valor de vendas (Últimos 7 dias)</h5>
+        <canvas id="dailySalesChart"></canvas>
+    </div>
+
+    <div class="col-md-6 text-center">
+        <h5 class="text-center mb-3">Quantidade de vendas diárias</h5>
+        <canvas id="dailySalesQuantityChart"></canvas>
+    </div>
+
+    <script>
+  // 1. O 'ouvinte' é aberto aqui...
+  document.addEventListener("DOMContentLoaded", function() {
+
+    // --- DADOS ---
+    // 2. Parse dos dados (agora com o nome da variável corrigido)
+    var dailySalesData = JSON.parse('{{ daily_sales_data|safe }}');
+    var dailySalesQuantityData = JSON.parse('{{ daily_sales_quantity_data|safe }}');
+
+
+    // --- GRÁFICO 1: VENDAS (LINHA) ---
+
+    // 3. Definição do 'ctxDailySales' que estava faltando
+    var ctxDailySales = document.getElementById('dailySalesChart').getContext('2d');
+
+    var dailySalesChart = new Chart(ctxDailySales, {
+      type: 'line',
+      data: {
+        labels: dailySalesData.dates,
+        datasets: [{
+          label: 'Valor em vendas',
+          data: dailySalesData.values,
+          fill: false,
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2,
+          tension: 0.5
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+
+    // --- GRÁFICO 2: QUANTIDADE (BARRA) ---
+    var ctxDailySalesQuantity = document.getElementById('dailySalesQuantityChart').getContext('2d');
+
+    var dailySalesQuantityChart = new Chart(ctxDailySalesQuantity, {
+      type: 'bar',
+      data: {
+        labels: dailySalesQuantityData.dates,
+        datasets: [{
+          label: 'Quantidade de vendas:',
+          data: dailySalesQuantityData.values,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+  // 4. O 'ouvinte' só é fechado aqui, no final de todo o código.
+  });
+</script>
+
+</div>
+
+<div class="row mt-4 justify-content-center">
+
+    <div class="col-md-6 text-center">
+        <h5 class="mb3">Produtos por categoria: </h5>
+        <div class="mb-4"></div>
+        <div class="embed-responsive embed-responsive-1by1" style="width: 400px; display: inline-block;">
+        <canvas id="productByCategoryChart" class="embed-responsive-item"></canvas>
+        </div>
+    </div>
+
+    <div class="col-md-6 text-center">
+        <h5 class="mb3">Produtos por marca: </h5>
+        <div class="mb-4"></div>
+        <div style="width: 400px; display: inline-block;">
+        <canvas id="productByBrandChart" class="embed-responsive-item"></canvas>
+        </div>
+    </div>
+
+<script>
+  // Espera a página carregar
+  document.addEventListener("DOMContentLoaded", function() {
+
+    // --- 1. PARSE DOS DADOS VINDOS DO DJANGO ---
+    var productCountByCategory = JSON.parse('{{ product_count_by_category|safe }}');
+    var productCountByBrand = JSON.parse('{{ product_count_by_brand|safe }}');
+
+
+    // --- 2. GRÁFICO: PRODUTOS POR CATEGORIA (DOUGHNUT) ---
+    var ctxCategory = document.getElementById('productByCategoryChart').getContext('2d');
+    var productByCategoryChart = new Chart(ctxCategory, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(productCountByCategory),
+        datasets: [{
+          // Pega os valores do seu dicionário (ex: 10, 25)
+          data: Object.values(productCountByCategory),
+          backgroundColor: [ // Cores para as fatias
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)'
+          ],
+          borderColor: 'rgba(255, 255, 255, 1)', // Borda branca entre as fatias
+          borderWidth: 1
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: true, // Mudei para 'true', é melhor para este gráfico
+            position: 'top', // Posição da legenda
+          }
+        }
+      }
+    });
+
+
+    // --- 3. GRÁFICO: PRODUTOS POR MARCA (DOUGHNUT) ---
+    var ctxBrand = document.getElementById('productByBrandChart').getContext('2d');
+    var productByBrandChart = new Chart(ctxBrand, {
+      type: 'doughnut',
+      data: {
+        // Pega as chaves (ex: 'Marca A', 'Marca B')
+        labels: Object.keys(productCountByBrand),
+        datasets: [{
+          // Pega os valores (ex: 5, 12)
+          data: Object.values(productCountByBrand),
+          backgroundColor: [ // Paleta de cores diferente
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)'
+          ],
+          borderColor: 'rgba(255, 255, 255, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: true, // Legenda também visível
+            position: 'top',
+          }
+        }
+      }
+    });
+
+  });
+</script>
+
+</div>
+
+{% endblock %}
